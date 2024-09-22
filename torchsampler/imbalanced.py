@@ -57,10 +57,20 @@ class ImbalancedDatasetSampler(torch.utils.data.sampler.Sampler):
             return dataset.samples[:][1]
         elif isinstance(dataset, torch.utils.data.Subset):
             return dataset.dataset.imgs[:][1]
+        elif isinstance(dataset, torch.utils.data.ConcatDataset): # added. add before next `elif` because ConcatDataset belong to torch.utils.data.Dataset
+            return self._get_concat_labels(dataset) # added
         elif isinstance(dataset, torch.utils.data.Dataset):
             return dataset.get_labels()
+
         else:
             raise NotImplementedError
+
+    def _get_concat_labels(self, concatdataset): # added
+        dataset_list = concatdataset.datasets
+        concat_labels = []
+        for ds in dataset_list:
+            concat_labels.extend(ds.targets)
+        return concat_labels
 
     def __iter__(self):
         return (self.indices[i] for i in torch.multinomial(self.weights, self.num_samples, replacement=True))
